@@ -1,0 +1,121 @@
+Build a production-ready cross-platform “Project Car Booking” mobile app for iOS + Android using React Native (Expo + TypeScript) with a hosted backend (Supabase). The app is for Siemens Mobility internal use on the Hafeet project to book shared project cars (e.g., Dubai → Al Ain customer meetings). Make it clean, fast, and very simple for busy engineers.
+
+TECH STACK (must follow)
+- Mobile: Expo (React Native) + TypeScript, expo-router navigation, modern UI components, form validation, good empty states
+- Backend: Supabase (Auth + Postgres + Row Level Security + Storage optional)
+- Notifications: Expo push notifications (send on booking created/updated/cancelled, and when someone requests to “join ride”)
+- Works on phones first. Tablet layouts optional but nice.
+- Include seed/demo data and a “Local demo mode” fallback (in-memory) if Supabase env vars are missing, but default to Supabase.
+
+CORE FEATURES
+1) Authentication & roles
+- Login with email + password (Supabase Auth)
+- Role: user / admin
+- Admin can add/edit cars and manage users
+- User profile: name, phone, home office (Dubai/Al Ain/Abu Dhabi), optional team
+
+2) Car inventory
+- Car list with: plate number, make/model, color, seating capacity, assigned base (Dubai/Al Ain), tags (SUV/sedan), status (available / in-use / maintenance)
+- Car detail page: photo (optional), specs, last known odometer, fuel level, notes
+
+3) Booking system (the heart)
+- Book a car for a time window:
+  - pickup datetime, return datetime
+  - pickup location (Dubai office / site / custom)
+  - destination (Al Ain / Abu Dhabi / custom)
+  - purpose / customer / meeting ref (text)
+  - passengers count
+- Availability checking:
+  - prevent overlap bookings for the same car (hard block)
+  - show “Available cars” for the selected window
+- Booking states:
+  - reserved, checked_out, returned, cancelled
+- My bookings screen + calendar-like upcoming list
+- Admin can view all bookings
+
+4) Transparency / “Join ride” feature
+- Anyone can open a car and see current + upcoming booking blocks (with limited personal info)
+- When a car is booked, display:
+  - Booked by: name (and optional phone if user allows), route summary, pickup time
+  - Button “Request to join ride”
+- Join ride workflow:
+  - requester sends a message (pre-filled: “I’m going to Al Ain too, can I join?”)
+  - booking owner can approve/decline
+  - if approved, the requester is added as a “ride mate” on that booking
+  - show ride mates list on booking details
+- Privacy:
+  - Show booker name to all authenticated users
+  - Show phone only if the booker toggled “Share phone for ride sharing”
+
+5) Check-out / return (car handover)
+- When starting trip: “Check out car”
+  - capture odometer start, fuel level start, optional photos (Supabase Storage)
+  - confirm key pickup
+- When returning: “Return car”
+  - odometer end, fuel level end, notes/damages, optional photos
+- After return, car becomes available again (if no next booking immediately)
+
+6) Maintenance / issues
+- Report issue on a car: category, description, severity, photo
+- Admin can set car status to maintenance (blocks booking)
+
+7) Audit & safety
+- Audit log table: who created/updated/cancelled bookings, check-out/return timestamps
+- RLS policies so users can:
+  - read cars and booking time blocks
+  - create bookings
+  - edit/cancel only their own bookings (admins can edit all)
+  - read booker names; phone only if shared
+- Prevent double booking at DB level with a constraint (use Postgres exclusion constraint on tsrange if possible; otherwise implement a transaction check on insert).
+
+DATABASE SCHEMA (Supabase / Postgres)
+Create SQL migrations (in a /supabase folder) for:
+- profiles(id uuid pk references auth.users, full_name text, phone text, share_phone boolean default false, role text default 'user', home_office text)
+- cars(id uuid pk, plate text unique, make text, model text, color text, seats int, base text, status text, tags text[], photo_url text, last_odometer int, last_fuel text, notes text, created_at, updated_at)
+- bookings(id uuid pk, car_id uuid fk, user_id uuid fk, pickup_at timestamptz, return_at timestamptz, pickup_location text, destination text, purpose text, passengers int, status text, created_at, updated_at)
+- booking_ride_mates(id uuid pk, booking_id uuid fk, user_id uuid fk, status text (requested/approved/declined), message text, created_at)
+- handovers(id uuid pk, booking_id uuid fk, checkout_odometer int, return_odometer int, checkout_fuel text, return_fuel text, checkout_photos text[], return_photos text[], notes text, created_at)
+- issues(id uuid pk, car_id uuid fk, user_id uuid fk, category text, severity text, description text, photo_urls text[], status text default 'open', created_at)
+- audit_log(id uuid pk, actor_id uuid, action text, entity text, entity_id uuid, meta jsonb, created_at)
+
+APP SCREENS (expo-router)
+- (auth)/login, (auth)/register
+- (tabs)/cars (list + filters), cars/[id] (detail + availability blocks)
+- (tabs)/book (wizard: time window -> available cars -> details -> confirm)
+- (tabs)/bookings (my bookings, upcoming/past, booking detail)
+- booking/[id] detail: join ride requests, ride mates, check-out/return actions
+- (tabs)/profile (share phone toggle, my info)
+- (admin) stack: manage cars, set maintenance, view all bookings, manage issues
+
+UI/UX REQUIREMENTS
+- Very clear “Available / Not available” states
+- Quick filters: base (Dubai/Al Ain), seats, status, tags
+- Time selection with sensible defaults (next 30/60/90 minutes)
+- Show booking conflicts gracefully (explain who booked and when + join ride button)
+- Use consistent components, loading skeletons, and toast messages
+
+DELIVERABLES IN THE REPLIT PROJECT
+- Fully working Expo app code (TypeScript)
+- A README with:
+  1) How to create Supabase project
+  2) Where to paste env vars in Replit Secrets
+  3) How to run migrations (provide SQL files + instructions)
+  4) How to run the app (expo start)
+  5) How to build for iOS/Android using EAS
+- Provide .env.example with:
+  EXPO_PUBLIC_SUPABASE_URL=
+  EXPO_PUBLIC_SUPABASE_ANON_KEY=
+- Include seed script (or SQL) to add 6 cars and 10 sample bookings
+
+IMPLEMENTATION DETAILS
+- Use Supabase JS client
+- Use react-hook-form + zod for validation
+- Use date-fns for date handling
+- Use optimistic UI for booking creation, but confirm with DB response
+- Enforce overlap protection server-side (DB constraint or transaction check)
+- Write clean, commented code
+
+IMPORTANT
+- Don’t mock the core booking logic—make it real and correct.
+- Make sure time zones are handled correctly (store timestamptz, display local).
+Start by scaffolding the Expo app, routing, and Supabase client, then implement schema + RLS SQL, then screens.
