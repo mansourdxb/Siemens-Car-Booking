@@ -1,0 +1,7 @@
+{
+  "updatedAt": "2026-02-03T00:00:00Z",
+  "cars": [
+    { "id": "DXB-001", "name": "Prado", "plate": "DXB 12345", "seats": 7, "base": "Dubai", "status": "available", "tags": ["SUV"] },
+    { "id": "AAN-002", "name": "Fortuner", "plate": "AAN 67890", "seats": 7, "base": "Al Ain", "status": "available", "tags": ["SUV"] }
+  ]
+}

@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import SegmentedControl from "@react-native-segmented-control/segmented-control";
+import { SegmentedTabs } from "@/components/SegmentedTabs";
 
 import { BookingCard } from "@/components/BookingCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -120,13 +120,10 @@ export default function BookingsScreen() {
           { paddingTop: headerHeight + Spacing.lg },
         ]}
       >
-        <SegmentedControl
-          values={["Upcoming", "Past"]}
+        <SegmentedTabs
+          options={["Upcoming", "Past"]}
           selectedIndex={selectedIndex}
-          onChange={(event) =>
-            setSelectedIndex(event.nativeEvent.selectedSegmentIndex)
-          }
-          style={styles.segment}
+          onChange={setSelectedIndex}
         />
       </View>
 
